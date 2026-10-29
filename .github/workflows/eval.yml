@@ -1,0 +1,38 @@
+
+name: Triage Quality Gate
+
+on:
+  pull_request:
+  push:
+
+permissions:
+  contents: read
+
+jobs:
+  offline-eval:
+    name: Offline triage evaluation
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      TRIAGE_MODEL: drvn-sim-1.0
+      PYTHONHASHSEED: "0"
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v7
+
+      - name: Set up Python 3.13
+        uses: actions/setup-python@v7
+        with:
+          python-version: "3.13"
+
+      - name: Run unit tests
+        run: python -m unittest discover -s tests -v
+
+      - name: Evaluate offline triage (FakeLLM seed 42)
+        run: >-
+          python evals/run_eval.py
+          --min-real-bug-recall 0.60
+          --min-real-bug-precision 0.50
+          --min-coverage 1.0
+          --min-valid-output-rate 1.0
